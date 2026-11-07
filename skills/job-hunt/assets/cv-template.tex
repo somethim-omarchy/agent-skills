@@ -1,0 +1,103 @@
+% Build from this directory: make general
+% General-purpose CV: balanced across web, infrastructure, and Rust/robotics work.
+\documentclass[10pt,a4paper]{article}
+\usepackage[margin=15mm]{geometry}
+\usepackage{fontspec}
+\setmainfont{Liberation Sans}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{needspace}
+\usepackage[hidelinks]{hyperref}
+\hypersetup{pdftitle={Arbi Kullakshi CV},pdfauthor={Arbi Kullakshi}}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{3pt}
+\setlist[itemize]{leftmargin=*,labelindent=0pt,itemsep=2pt,parsep=0pt,topsep=3pt}
+\titleformat{\section}{\large\bfseries}{}{0pt}{}[\titlerule]
+\titlespacing*{\section}{0pt}{10pt}{5pt}
+\newcommand{\entry}[2]{\Needspace{5\baselineskip}\par\addvspace{5pt}\noindent\textbf{#1}\hfill\mbox{\textbf{#2}}\par}
+\newcommand{\job}[3]{\entry{#1}{#2}\vspace{-\parskip}#3\par}
+\begin{document}
+\begin{center}
+{\fontsize{22}{24}\selectfont\bfseries ARBI KULLAKSHI}\par\vspace{3pt}
+{\fontsize{11}{13}\selectfont Software Engineer}\par\vspace{3pt}
+{\fontsize{8.5}{10}\selectfont Tirana, Albania  ·  +355 68 948 3099  ·  \href{mailto:contact@arbikullakshi.com}{contact@arbikullakshi.com}  ·  \href{https://arbikullakshi.com}{arbikullakshi.com}\\
+\href{https://github.com/somethim}{github.com/somethim}  ·  \href{https://www.linkedin.com/in/arbi-kullakshi/}{linkedin.com/in/arbi-kullakshi}\par}
+\end{center}
+\vspace{-8pt}
+\section*{SUMMARY}
+Software engineer with 5+ years of experience building and running production systems across five companies: backends and web products in Laravel, Django, and React/Next.js, the containerized delivery behind them, and open-source libraries in PHP and Rust. Outside work, builds autonomous robotics software in Rust, from state estimation and planning to embedded drivers.\par
+\section*{PROFESSIONAL EXPERIENCE}
+\job{Full Stack Engineer}{Jan 2024 – Present}{Zennit · Full-Time}
+\begin{itemize}
+  \item Owned backend, frontend, and deployment systems across six products using Laravel, Django, React/Next.js, PostgreSQL, Redis, Docker, and Ansible.
+  \item Architected a ten-module Laravel SaaS backend and identity platform supporting 12 external OAuth providers, passwordless login, account linking, TOTP MFA, and auditable session termination, with credentials modelled separately from identity.
+  \item Designed and deployed the open-source \textbf{\href{https://github.com/zennit-dev/abac}{zennit/abac}} package as a production authorization layer, with mixed-policy evaluation over 10,000 resources completing in approximately 15 ms in controlled benchmarks.
+  \item Engineered the server half of an offline sync protocol behind a single reconciliation endpoint, real-time collaboration over WebSockets, and an AI assistant exposing tools through an \textbf{MCP} server.
+  \item Automated containerized delivery and project setup with Docker, Traefik/Nginx, GitHub/GitLab CI, and reusable deployment workflows.
+\end{itemize}
+\job{Backend Developer}{Aug 2025 – Jun 2026}{Hire A Loo · Contract · Part-Time}
+\begin{itemize}
+  \item Shipped 18 Laravel CRM PRs covering Typesense-powered global search, web-lead ingestion, an end-to-end quote workflow with public accept/reject flows, email templating, CardDAV contacts, and legacy migrations.
+  \item Published the open-source \textbf{\href{https://github.com/magic-systems-io/laravel-notifyre-sms}{laravel-notifyre-sms}} package with direct and notification-channel delivery, CLI/REST interfaces, webhook status tracking, optional persistence, and 183 tests.
+\end{itemize}
+\job{Full Stack Developer}{Jan 2023 – Jan 2024}{Clickservice GmbH · Full-Time}
+\begin{itemize}
+  \item Optimized Django and PostgreSQL services with targeted raw SQL where ORM-generated queries were inefficient.
+  \item Built React/TypeScript interfaces, third-party integrations, and automated reporting for production workflows.
+\end{itemize}
+\job{Mobile Developer}{Jan 2022 – Dec 2022}{Vodafone Albania · Full-Time}
+\begin{itemize}
+  \item Shipped cross-platform React Native features to production iOS and Android applications.
+  \item Integrated REST APIs, WebSockets, and authentication, and extended automated release workflows.
+\end{itemize}
+\job{Junior Frontend Developer}{Jan 2021 – Dec 2021}{EnRedYAte · Full-Time}
+\begin{itemize}
+  \item Translated product and design requirements into responsive React and WordPress interfaces.
+  \item Maintained production applications and reviewed peer code in close collaboration with designers.
+\end{itemize}
+\newpage
+\fontsize{9.5}{11}\selectfont
+\setlength{\emergencystretch}{1em}
+\setlength{\parskip}{2pt}
+\setlist[itemize]{leftmargin=*,labelindent=0pt,itemsep=1pt,topsep=2pt}
+\section*{SELECTED PROJECTS}
+\entry{arbikullakshi.com · Server-Rendered Portfolio Platform}{May 2026 – Present}
+\href{https://arbikullakshi.com}{arbikullakshi.com}\par
+\begin{itemize}
+  \item Deployed a live seven-crate Rust and Leptos workspace, pairing a server-rendered public site with a passkey-authenticated admin surface backed by Axum and PostgreSQL; 286 tests and lint gates in CI.
+\end{itemize}
+\entry{The Single Deployer · Production Infrastructure}{Aug 2026 – Present}
+\href{https://arbikullakshi.com/projects/infra-88926d8d}{arbikullakshi.com/projects/infra}\par
+\begin{itemize}
+  \item Built the Ansible repository that is the only path to production for three applications on one Hetzner server: host hardening, Docker, Traefik, and image-based updates with retag rollback.
+\end{itemize}
+\entry{latchkey · Sign-In Building Blocks for Rust}{Oct 2026 – Present}
+\href{https://crates.io/crates/latchkey}{crates.io/crates/latchkey}\par
+\begin{itemize}
+  \item Published a sans-I/O authentication crate (Argon2id, TOTP, recovery codes, passkeys, cookies, lockout) extracted from a production Axum service; 196 tests and fuzzing.
+\end{itemize}
+\entry{Roomba and Cave Robot · Autonomous Robotics in Rust}{May 2026 – Present}
+\href{https://github.com/somethim/roomba}{github.com/somethim/roomba}  ·  \href{https://github.com/somethim/cave-robot}{github.com/somethim/cave-robot}\par
+\begin{itemize}
+  \item Built two robotics simulations with EKF sensor fusion, SLAM, and clearance-aware A* planning, visualized in Rerun and integrated with ROS 2 and Gazebo.
+\end{itemize}
+\entry{icm42688p · Embedded Rust IMU Driver}{Oct 2026}
+\href{https://github.com/somethim/icm42688p}{github.com/somethim/icm42688p}\par
+\begin{itemize}
+  \item Wrote an allocation-free no\_std driver on embedded-hal with 17 mock-SPI tests; hardware validation in progress.
+\end{itemize}
+\section*{EDUCATION \& PROFESSIONAL DEVELOPMENT}
+\entry{Let's Get Rusty LLC}{Jun 2026 – Present}
+\textbf{Rust Live Accelerator · Virtual}\par
+Live advanced Rust program with a 100+ hour curriculum covering language features, design patterns, asynchronous services, persistence, embedded systems, and production delivery.\par
+\entry{European University of Tirana}{2026}
+B.Sc. Informatics Engineering · Thesis: Event-Aware Traffic Prediction\par
+\section*{TECHNICAL SKILLS}
+\textbf{Programming Languages:} PHP, Python, TypeScript, Rust\par
+\textbf{Backend \& Frontend:} Laravel, Django, Axum, React, Next.js, React Native\par
+\textbf{Data \& Infrastructure:} PostgreSQL, Redis, Docker, Kubernetes, Ansible, Traefik, GitHub/GitLab CI\par
+\textbf{Robotics:} ROS 2, SLAM, EKF, Gazebo, embedded-hal\par
+\section*{LANGUAGES}
+Albanian (Native) · English (C2) · German (B1)\par
+\end{document}
