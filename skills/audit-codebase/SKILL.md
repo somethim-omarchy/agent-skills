@@ -1,7 +1,7 @@
 ---
 name: audit-codebase
 description: Rigorously audit a local codebase without changing its implementation. Map files, symbols, call relationships, entry points, and trust boundaries; trace where and how code is called and how untrusted data reaches dangerous sinks; find vulnerabilities, defects, duplication, dead or suspicious code, performance risks, and maintainability smells. Each issue gets its own file under audit/issues/ (like a git issue, with evidence and a proposed fix), indexed by audit/REPORT.md, for a later fixing pass. Runs in resumable, bounded ticks, so it works under /loop (fixed interval or self-paced) or standalone, and can keep watching new commits. Use for repository audits, security reviews, vulnerability hunts, code-health reviews, technical-debt inventories, architecture mapping, or requests to inspect a project and record actionable findings, including "keep auditing in a loop".
-argument-hint: "[scope-path ...] [--watch] [--restart] [--tick]"
+argument-hint: "[scope-path ...] [--watch] [--restart] [--tick] [--classic]"
 ---
 
 # Audit Codebase
@@ -20,6 +20,7 @@ Invocation arguments (may be empty): $ARGUMENTS
 - Scope paths: restrict the audit to these roots. Record them in the ledger; if they differ from the recorded scope, re-plan the work queue for the new scope and keep existing issues.
 - `--watch`: after the audit completes, keep re-auditing code that changes instead of ending the loop.
 - `--restart`: start a new full run: rebuild the ledger and rerun every pass, re-verifying existing issues instead of duplicating them. Keep every issue, trace, and memory-map ID. It takes effect once. If the current run was already started by `--restart`, continue that run instead, because under `/loop` the same arguments repeat on every tick.
+- `--classic`: use the tick-by-tick unit review and verification instead of the deep scan workflow.
 - `--tick`: force loop-mode behavior (one bounded tick) even when not started by `/loop`.
 
 Typical use: `/loop /audit-codebase` (self-paced until complete), `/loop 20m /audit-codebase --watch` (keep auditing new commits), or `/audit-codebase` (run to completion in one session).
@@ -71,6 +72,18 @@ Map the verdict to loop control:
 - `blocked`: progress needs the user (for example ambiguous scope, or conflicting manual edits to the audit files). End the loop as for `done`, and state the question.
 
 `Noop` is `false` whenever the tick changed any file under `audit/`.
+
+## Deep scan mode (default)
+
+When the Workflow tool is available, run unit review (P4) and verification (P7) as one multi-agent deep scan instead of tick-by-tick reading. It works like CodeRabbit or Alibaba's open-code-review: related files are reviewed in bundles by isolated reviewers against a fixed checklist, then separate skeptics try to refute every finding, and only survivors are reported. Invoking this skill counts as the user's opt-in to that workflow. Use the classic tick procedure only with `--classic`, when the Workflow tool is missing, or for `--watch` ticks on a few changed files.
+
+1. **Bundle (P1).** Size every first-party source directory (non-test, non-generated lines). Cut bundles of about 5–12k lines along package or feature boundaries, so that every source file is in exactly one bundle. Split big packages by file name or subfolder, and gather small packages into alphabetical catch-all bundles. Add bundles for SQL migrations/queries and for deploy/infra scripts. Record the bundle list in `map.md` as the `U-*` units.
+2. **Run** `${CLAUDE_SKILL_DIR}/references/deep-scan.workflow.js`. It takes `root`, `bundles`, `known` (every Open/Candidate issue, so reviewers look for new ones and every known issue is re-checked against the current code), `rules` (the repository's read-only and heavy-job rules) and `load`. Large inputs go into a run copy of the script under the scratchpad, with the data put in place of `args`, and the copy is started with `scriptPath`. Inline args would flood the context.
+3. **Completeness.** The run reports `failedBundles` and `incomplete` (agents that died, for example on network errors). Resume with `resumeFromRunId` until both are empty. A scan with an unreviewed bundle or an unverified finding is not complete.
+4. **File (P7).** Write each surviving finding (`holds: true`) as an `Open` issue in `audit/issues/` with the skeptics' reasons under Disproof attempts. Write each refuted finding as `Rejected` with the reasons, and close each re-checked issue that no longer holds as `Resolved` or `Rejected`. Then rebuild the index with `scripts/audit_index.py rebuild`.
+5. **Second pass on request.** A "do another pass" reruns the same script with a fresh `known` list. That re-checks every existing issue with new skeptics and reviews every bundle again.
+
+Severity: two skeptics must both fail to refute a must-fix (High/Critical) finding; one is enough for the rest.
 
 ## Passes
 

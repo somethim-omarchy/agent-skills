@@ -35,7 +35,7 @@ References, in this skill's directory:
 
 | Skill | Used for | How it is called |
 |---|---|---|
-| `audit-codebase` | audits, migration of old reports, validating candidates, re-audits | Skill tool, `--tick` (plus `--restart` for a second run) |
+| `audit-codebase` | audits, migration of old reports, validating candidates, re-audits | Skill tool. Audits and re-audits run in its deep scan mode (a Workflow: bundle reviewers, then skeptics refuting each finding); the pipeline's own run counts as the opt-in. Run the scan as one stage step and wait for its notification, then file the issues before fixing starts. `--tick --classic` only for small watch re-audits |
 | `fix-audit-findings` | fixing validated issues | in a worktree for a single issue; as a background lane worker (worker mode) for parallel fixes |
 | `discover-and-plan` | turning a vague goal into `plans/NNN-*.md` tasks | Skill tool, `--tick` |
 | `implement-plan` | building Ready plan tasks | in a worktree per task; as a lane worker for parallel tasks |
