@@ -157,6 +157,14 @@ Important request, command, job, state, or data flows in execution order. Link e
 |---|---|---|---|---|---|---|---|
 | S-sql | SQL/ORM raw | `query(`, `raw(`, `db.exec` | 23 | 23 | 20 | F-003, F-004 | 1 (test fixture) |
 
+## State Census
+
+One row per implicit or explicit state machine (playbook §11): DB status columns, stateful structs and flag sets, and frontend flows.
+
+| Row | Machine | States (declared / written / read) | Writers (linked, from → to, guard) | Terminal | Exit from each non-terminal | Companions | Checked | Issues |
+|---|---|---|---|---|---|---|---|---|
+| M-posts | `posts.status` | 8 / 8 / 8 | 14 writers; [`jobs/workflows.go:780`](/jobs/workflows.go#L780) any → published, unguarded | published | publishing: job finalizer, no reaper | `failed`, `published_at` | T-031 | F-040 |
+
 ## Source-to-Sink Traces
 
 Safe traces take one line:

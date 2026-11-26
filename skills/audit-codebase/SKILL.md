@@ -94,7 +94,7 @@ Plan the work queue during P0 and P1 as ledger rows. Each row is one tick-sized 
 | P0 Setup | one | metadata, scope, stack, commands, earlier audits, migration of a legacy report |
 | P1 Inventory and map | one or two | inventory, components, relationship skeleton, unit list `U-*` |
 | P2 Attack surface | one | entry points, untrusted inputs, trust boundaries, authn/authz per entry |
-| P3 Sink census | one per few sink classes | every dangerous sink located and counted |
+| P3 Sink census | one per few sink classes, plus `S-state` | every dangerous sink located and counted; every implicit state machine listed |
 | P4 Unit review | one per `U-*` | deep per-unit analysis, caller index, candidate issues |
 | P5 Flow tracing | one per entry group or sink class | forward and backward traces `T-*`, authorization matrix |
 | P6 Cross-cutting | one per theme | duplication, configuration, dependencies, concurrency, tests, dead code |
@@ -143,6 +143,8 @@ For each entry, record the untrusted inputs it accepts, the authentication and a
 
 For every sink class in the playbook that applies to the stack, search the whole in-scope codebase for all sink APIs and for wrappers around them. Record counts per class in the Sink Census. Enumerate; do not sample. Add P5 rows so every census sink gets a trace or an explicit, reasoned exclusion.
 
+Also take the **state census** (playbook §11) as its own P3 row `S-state`: every status/state/stage column and its CHECK, every writer of each, stateful structs and flag sets in code, and frontend flow state. Record each machine in `map.md` § State Census, and add P5 rows (one per group of related machines) to check them against playbook §11.
+
 ### P4 — Unit review
 
 For the unit's files:
@@ -167,6 +169,8 @@ For the unit's files:
 - **Stored data:** treat data written by users and later read back (database, cache, files, queues) as a source again (second-order flows).
 - **Authorization matrix:** for every route or command, tabulate each operation against authentication, role or ownership check, tenant scoping, CSRF, and rate limiting. Differences between siblings, and object lookups not scoped to the owner or tenant, become candidates.
 
+- **State machines:** for each State Census machine, list every writer with its from → to transition and guard, then run the playbook §11 checks: unguarded writers, stuck non-terminal states with no reaper, job and domain rows finishing apart, vocabulary drift, webhook ordering, duplicated derived state, per-iteration leaks, and decisions taken on transitions.
+
 Record every trace as `T-*` in `map.md` with its verdict. Include `Safe` traces, kept to one line with the guard linked, so later ticks and the fixer do not redo them.
 
 ### P6 — Cross-cutting
@@ -180,6 +184,7 @@ Cover what per-unit review misses:
 - concurrency across components;
 - performance hazards on a plausible hot path;
 - missing or misleading tests around concrete risks.
+- the easily missed vectors in playbook §12 (denial of wallet, LLM input, fetch-anything features, identity lifecycle, time, money, messaging abuse, OAuth, deploy and schema, resilience, silent failure, soft delete, supply chain, browser surface).
 
 Use repository-native static checks, tests, linters, type checkers, and build commands when they are discoverable, safe, and reasonably bounded. Use installed security analyzers (for example semgrep, bandit, gosec, cargo-audit) only when already present and runnable without writes. Prefer targeted commands before broad expensive ones. Treat tool output as candidates, never as findings without a trace. Record exact commands, outcomes, and limitations in `log.md`.
 

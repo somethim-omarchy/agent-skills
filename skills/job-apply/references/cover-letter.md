@@ -18,6 +18,11 @@
 - Salutation: a named person if the posting or `contacts.md` gives one; otherwise "Dear <Company> team," / "Dear Hiring Team,".
 - Date, the candidate's contact block, and the company line at the top (the LaTeX template handles layout).
 
+## Design and marketing roles
+- Name one portfolio case study in the opening or evidence paragraph and link it; the letter's job is to get the portfolio opened.
+- Marketing: one or two results with numbers and the channel (e.g. paid social, SEO, email), and the budget or scale if the user can share it.
+- Do not describe your own taste or creativity; show it with the work.
+
 ## Checklist before marking final
 - Every requirement claimed is supported in `fit.md`.
 - Company name, role title and any person's name are spelled as in the posting.

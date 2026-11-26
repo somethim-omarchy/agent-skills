@@ -94,7 +94,7 @@ A guard protects a sink only when all of these hold:
 - **Object-level (IDOR):** every lookup by an ID the client supplies must be scoped to the owner or tenant in the query itself, not checked afterwards in only some branches.
 - **Function-level:** admin and internal routes must be protected at the route, not only hidden in the UI.
 - **Multi-tenant isolation:** check queries, caches (keys include the tenant?), file paths, background jobs, search indexes, and exports.
-- **State machines:** transitions are validated server-side; terminal states cannot be re-entered; client-supplied state is not trusted.
+- **State machines:** transitions are validated server-side; terminal states cannot be re-entered; client-supplied state is not trusted. Most state machines are implicit; census and check them with section 11.
 - **Concurrency:** check-then-act on balances, inventory, coupons, invites, and unique names; missing transactions, locks, or unique constraints; non-idempotent webhook or retry handlers; double submission.
 - **Business logic:** negative or zero quantities, integer overflow, rounding and currency, time-zone and expiry boundaries, replayed tokens, discount stacking.
 
@@ -127,3 +127,50 @@ After confirming a finding, generalize it: the same sink with the same missing g
 ## 10. Independent verification (optional)
 
 For Critical or High findings, when the Agent tool is available, give a fresh subagent only the claim, the linked locations, and the relevant guard hypotheses, and ask it to prove the claim wrong. Do not share your reasoning, to avoid anchoring it. Record whether the refutation succeeded, and adjust the finding if it did.
+
+## 11. Implicit state machines and lifecycles
+
+Most state machines are never written down. A `status`/`state`/`stage`/`phase` column, a jsonb field, a set of booleans, or a nullable timestamp encodes a lifecycle, and its transitions are spread over every `UPDATE`, handler, job, and webhook that writes it. Census them all (P3 row `S-state`), then check each one.
+
+**Find them.**
+- Schema: `CHECK (status IN (…))`, enum types, text columns named `status|state|stage|phase|step|mode|outcome`, and companion columns (`*_at`, `*_since`, `failed`, `held`, `cancel_requested_at`, `attempts`, `planned_state`) that must agree with the status.
+- Writers: every `SET status`, `SET state`, ORM `.status =`, upsert `ON CONFLICT … SET status`, insert of a non-initial status, and any provider string passed through (`ELSE $2`, `status: payload.status`). Search the string literals of every state, not only the column name.
+- Code without a column: structs with several booleans or nil-able pointers that together mean a phase; `stage`/`mode` variables driven by if-chains; per-run structs reused across loop iterations; retry counters; connection and process lifecycles (start → draining → stopped); derived states computed in a function (`State(now)`, `isLive`).
+- Frontend: related `useState` booleans (`loading`, `saving`, `error`, `done`, `open`, `step`), refs that shadow state, polling and SSE lifecycles, and `switch` statements on server statuses.
+
+**Record per machine** (in `map.md` § State Census): states declared, states written, states read, every writer with its transition (from → to) and its guard, the terminal states, the exit path out of every non-terminal state, and the companion columns.
+
+**Check every machine for:**
+1. **Unguarded writers.** `WHERE id = $1` only, with no `AND status IN (allowed predecessors)` or row lock plus check. Such a writer can move a row backwards, out of a terminal state, or onto a soft-deleted row. Compare sibling writers: the one without the guard is the bug.
+2. **No allowed-transition table.** If a central `Transition()` exists, check that it validates `from → to` and that no writer bypasses it. If it allows any non-terminal to any status, that is a lead.
+3. **Stuck states.** Every non-terminal state (`running`, `processing`, `publishing`, `pending`, `sending`, `expiring`) needs an exit: completion, a failure path, cancellation, and a reaper for when the process dies. A row a crashed worker left behind must not stay forever. Check the cancel path separately from the failure path, since they often cover different predecessor states.
+4. **Split-brain between machines.** A job/queue record and its domain row (post, attempt, run, source) must finish together. Finalizers that run in a separate transaction, swallow their error, and then mark the job finished leave the domain row in progress forever. The same applies to the queue library's own state versus the app's `jobs` row, and to a parent and child row (import → import accounts, send → recipients, post → approval request).
+5. **Vocabulary drift.** States in the CHECK but never written (dead states that every filter silently relies on), states written but missing from the CHECK, no CHECK at all, raw provider statuses stored unmapped, a mapping `switch` with no default, the same "in flight" set copied in N places with different members, and frontend unions that rename or omit server states. Look for non-exhaustive switches with no `never`/default branch.
+6. **External event ordering.** Webhooks and callbacks arrive late, twice, or out of order. Is there an ordering clock (event time plus id tiebreak, with strict `<`)? Are terminal states sticky? Is live state re-read from the provider instead of trusting the payload? Can an event for an old object (a replaced subscription, a superseded attempt) change the current one?
+7. **Derived and duplicated state.** A state computed from timestamps or flags in two places (admin view versus billing SQL) disagrees on the edge cases (future start, null end, revoked). A stored field that is really derived (`failed` that must be recomputed after every change) goes stale.
+8. **Per-iteration leaks.** A struct reused across loop iterations or batch items keeps a flag set by an earlier item (one held item holds the rest). Check which fields are reset at the start of each iteration.
+9. **Decision logic on transitions.** Code that picks an email, a notification, a charge, or an audit event from `before → after` (first-match `switch` blocks) must be checked against every real path through the machine, especially states that linger (a confirmed trial that is never cleared after it converts).
+10. **Representable impossible states.** A flag combination the domain forbids (`loading && error`, `Ready=false && Question=nil`, `Dropped && Kept`, a zero value that means "pass") that some code path can still produce or must defend against.
+11. **Re-entry and late results (UI and handlers).** Double submit with no in-flight guard, several mutations on one object at once, an async result applied after unmount or after the dialog closed, a side effect inside a state updater, and polling with no in-flight guard and no failure cap.
+
+**Severity:** a stuck or backwards state that users see, that blocks deletion or billing, or that sends a wrong message is a Correctness or Data-integrity issue of Medium or above. A transition an attacker can drive (client-supplied status, an unauthenticated webhook, a replayed event) is Security.
+
+## 12. Easily missed vectors
+
+Check these per stack when the sink census and the authorization matrix don't already cover them:
+
+- **Denial of wallet:** cheap or unauthenticated requests that trigger paid work (LLM, image or video generation, email or SMS sends, scraping, third-party API calls). Check per-tenant spend caps, free-tier abuse, signup farming, retries that re-spend, and work started again after cancel.
+- **LLM and agent input:** prompt injection through scraped websites, uploaded files, social posts, emails, and brand data that reaches tools, outbound requests, or rendered HTML; private data sent to providers that the data terms don't allow; model output trusted as structured data without validation.
+- **Fetch-anything features:** website import, brand scan, link preview, image-by-URL and webhook targets are SSRF and parser sinks. Check redirects, DNS rebinding, and the size and time limits.
+- **File and media parsing:** image, PDF, office, font, video and archive parsers on user files; decompression bombs; ffmpeg/ImageMagick arguments; metadata (EXIF location) kept on public outputs.
+- **Identity lifecycle:** sessions and API tokens survive a password, MFA, role or membership change; invites stay usable after the inviter is removed or the workspace changes; account deletion and erasure leave data in object storage, search indexes, logs, caches, backups, or third parties.
+- **Time:** time zones, DST, end-of-month and leap days, expiry exactly at the boundary, clock skew between services, schedulers firing twice or not at all across a deploy or restart.
+- **Money:** rounding and currency, partial refunds, proration, double charges on retry, credits and grants with future start dates, refunds or disputes for objects already deleted.
+- **Messaging abuse:** invites, contact forms, newsletters, and password resets used to send spam to arbitrary addresses; account and invite enumeration through different responses or timing; rate limits missing on code entry (MFA, email codes).
+- **OAuth and integrations:** `state` and PKCE checks, redirect-URI allowlists, a token stored for the wrong workspace, refresh-token rotation races, scopes broader than needed, uninstall/revoke webhooks not handled.
+- **Deploy and schema:** old code running against the new schema during a rollout, migrations that lock big tables, down migrations that lose data, feature-flag combinations never tested, config that fails open when a variable is missing.
+- **Resilience:** outbound calls without timeouts, retry storms without backoff or jitter, poison messages retried forever, unbounded queues, graceful shutdown that cancels work before HTTP stops or never reports draining.
+- **Silent failure:** `_ =` on errors that leave state half-written, errors only logged on paths that need a retry or alert, health checks that stay green while background loops are dead.
+- **Soft delete:** reads missing `deleted_at IS NULL`, unique constraints that block re-creation, updates that revive deleted rows.
+- **Supply chain and CI:** unpinned CI actions and base images, install scripts in dependencies, secrets reachable from untrusted pull-request workflows, lockfile drift.
+- **Browser surface:** CSRF on cookie-auth state changes, `postMessage` without an origin check, service-worker cache of private pages, clickjacking on sensitive actions, and open redirects in sign-in `next` parameters.

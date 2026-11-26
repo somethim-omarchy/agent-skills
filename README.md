@@ -5,7 +5,7 @@ Every user-level Claude Code and Codex skill in one place. `./install.sh` symlin
 | Folder | Contents |
 | --- | --- |
 | `skills/` | My own skills: `audit-codebase`, `discover-and-plan`, `fix-audit-findings`, `implement-plan`, `pipeline`, `job-hunt`, `job-apply`, `tutor` |
-| `vendor/` | Third-party skills kept as installed: the caveman family (`caveman*`, `cavecrew`, `megacave`, `ultracave`, from [JuliusBrussee/caveman](https://github.com/JuliusBrussee/caveman)), `find-skills`, `investigate-first`, `lean-build`, `migration`, `safe-refactor`, `surgical-patch`, `verify-and-stop` |
+| `vendor/` | Third-party skills kept as installed: the caveman family (`caveman*`, `cavecrew`, `megacave`, `ultracave`, from [JuliusBrussee/caveman](https://github.com/JuliusBrussee/caveman)), `hallmark` (MIT, see its `LICENSE`), `find-skills`, `investigate-first`, `lean-build`, `migration`, `safe-refactor`, `surgical-patch`, `verify-and-stop` |
 
 Not kept here:
 - Skills Omarchy ships (`omarchy`, `omarchy-app`, `diagnose-crash`) are links into `/usr/share/omarchy` and follow the installed version.

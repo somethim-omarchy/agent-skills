@@ -77,6 +77,13 @@ For each defect class: where the fix belongs, what a correct fix looks like, and
 
 - Fix: make check-then-act atomic with a transaction at the right isolation level, a conditional update (`UPDATE … WHERE balance >= ?`), a unique constraint, or a lock with an owner and timeout. Make webhook and retry handlers idempotent with idempotency keys.
 - Negative tests: concurrent execution of the same operation (spawn N parallel calls and assert the invariant holds); retry after partial failure; duplicate delivery of the same event.
+- State machines: guard every writer with its allowed predecessors (`UPDATE … SET status = 'b' WHERE id = $1 AND status IN ('a')`) and treat zero rows affected as a lost race, not success. Put the allowed transitions in one table that the central transition function checks, and route bypassing writers through it. Keep terminal states sticky.
+- Finish a job and its domain rows in one transaction. If that can't be done, don't mark the job finished when finalizing fails, so it is retried or reaped. Give every non-terminal state a reaper keyed on a timestamp.
+- External events: order by event time with an id tiebreak (strict `<`), re-read live provider state rather than trusting the payload, and ignore events for objects that are no longer current.
+- Define a state vocabulary once (DB CHECK plus constants plus a typed frontend union), make provider mappings total, and make switches exhaustive (`never` in TS, a default that errors in Go).
+- Reset per-item state at the top of each loop iteration, ideally by building a fresh per-item struct.
+- UI: one union state or reducer per flow, one in-flight guard per object, abort or ignore async results after unmount or close, and no side effects inside state updaters.
+- Negative tests: each illegal transition is refused; a cancel or failure while in every non-terminal state ends terminal; a late or duplicate event leaves the state unchanged; a second loop item doesn't inherit the first one's flags.
 
 ## Resource exhaustion
 
