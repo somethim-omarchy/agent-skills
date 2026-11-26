@@ -10,7 +10,7 @@ Every user-level Claude Code and Codex skill in one place. `./install.sh` symlin
 Not kept here:
 - Skills Omarchy ships (`omarchy`, `omarchy-app`, `diagnose-crash`) are links into `/usr/share/omarchy` and follow the installed version.
 - Skills synced from claude.ai and plugin-provided skills come from their own installations.
-- Project skills stay committed in their projects: `translations` (synis-ai, basilic), the Laravel Boost skills (zennstream), `latchkey-basics` and `latchkey-porting` (shipped with the latchkey crate).
+- Project skills stay committed in their projects: the Laravel Boost skills (zennstream), `latchkey-basics` and `latchkey-porting` (shipped with the latchkey crate).
 
 To add a skill, put its folder (with `SKILL.md` at its root) in `skills/` or `vendor/` and rerun `./install.sh`. Test the installer with `tests/test_install.sh`.
 
